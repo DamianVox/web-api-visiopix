@@ -78,6 +78,35 @@ app.get(`/visiotime/validateAccount`, async(request, response) =>{
 
 })
 
+app.get(`/visiotime/updateAccount`, async(request, response) =>{
+
+    let id = request.query.id;
+    let name = request.query.name;
+    let surname = request.query.surname;
+    let email = request.query.email;
+    let phone = request.query.phone;
+    let password = request.query.password;
+    let user_name = request.query.user_name;
+	let account_type = request.query.account_type;
+
+    let found = false;
+
+    //console.log(email);
+
+    const pool = new Pool(conf);
+
+    const client = await pool.connect();
+    let res;
+    try {
+        res = await client.query(`update accounts set id = ${id}, name = '${name}', surname = '${surname}', email = '${email}', phone = '${phone}', password = '${password}', user_name = '${user_name}', account_type = ${account_type}  where id = ${id}`);
+        client.release()
+    } catch (error) {
+        console.log(error);
+    }
+console.log(res);
+return response.send(res);
+})
+
 app.get(`/visiotime/getAccount`, async(request, response) =>{
 
     let email = await request.query.email;
@@ -95,9 +124,13 @@ app.get(`/visiotime/getAccount`, async(request, response) =>{
         console.log(error);
     }
 
-    console.log(res.rows);
+    
+    res.rows.forEach(element => {
+        console.log(element);
+        return response.send(JSON.stringify(element));
+});
 
-   return response.send(res.rows);
+   
 
 })
 
