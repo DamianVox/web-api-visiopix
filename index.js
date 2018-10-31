@@ -14,7 +14,7 @@ connectionTimeoutMillis: 2000,
 
 let port = 8080;
 
-app.get(`/createUser`, async(request, response) =>{
+app.get(`/visiotime/createAccount`, async(request, response) =>{
 
     let name = await request.query.name;
     let surname = await request.query.surname;
@@ -46,7 +46,7 @@ if(found){
 }
 })
 
-app.get(`/validateUser`, async(request, response) =>{
+app.get(`/visiotime/validateAccount`, async(request, response) =>{
 
     let email = request.query.email;
 	let passwd = request.query.password;
@@ -78,7 +78,7 @@ app.get(`/validateUser`, async(request, response) =>{
 
 })
 
-app.get(`/getuser`, async(request, response) =>{
+app.get(`/visiotime/getAccount`, async(request, response) =>{
 
     let email = await request.query.email;
 
@@ -122,4 +122,4 @@ async function validate(email){
     return found;
 }
 
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
+app.listen(port, () => console.log(`VisioTime API listening on port ${port}!`))
