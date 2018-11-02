@@ -1,12 +1,18 @@
-let startup = require('./startup');
-let accounts = require('./account');
+let express = require('express');
+let app = express();
+const {Pool} = require('pg');
 
-startup.test();
+const conf = {
+database: `visiopix`,
+host: 'localhost',
+user: 'postgres',
+password: `postgres`,
+max: 20,
+idleTimeoutMillis: 30000,
+connectionTimeoutMillis: 2000,
+}
 
-let app = startup.express();
-let port = startup.port();
-
-//console.log(startup.start());
+let port = 8080;
 
 app.get(`/visiotime/createAccount`, async(request, response) =>{
 
@@ -18,10 +24,26 @@ app.get(`/visiotime/createAccount`, async(request, response) =>{
     let email = await request.query.email;
     let account_type = await request.query.account_type;
 
-    const res = await accounts.create_Account(name, surname,user_name, password, phone, email, account_type);
+    console.log(email);
 
-    return response.send(res);
+    const pool = new Pool(conf);
 
+    const client = await pool.connect();
+    let res;
+    try {
+        await client.query(`insert into accounts (name, surname, user_name, password, phone, email, account_type) values('${name}', '${surname}', '${user_name}', '${password}', '${phone}', '${email}', ${account_type})`);
+        client.release()
+    } catch (error) {
+        console.log(error);
+    }
+
+let found = await validate(email);
+
+if(found){
+    return response.send("User created");
+}else{
+    return response.send("ERROR!!! User not created");
+}
 })
 
 app.get(`/visiotime/validateAccount`, async(request, response) =>{
@@ -29,9 +51,31 @@ app.get(`/visiotime/validateAccount`, async(request, response) =>{
     let email = request.query.email;
 	let passwd = request.query.password;
 
-    const res = await accounts.validate_Account(email, passwd);
+    let found = false;
 
-    return response.send(res);
+    console.log(email);
+
+    const pool = new Pool(conf);
+
+    const client = await pool.connect();
+    let res;
+    try {
+        res = await client.query(`SELECT * FROM accounts where email = '${email}' and password = '${passwd}'`);
+        client.release()
+    } catch (error) {
+        console.log(error);
+    }
+
+    if(res.rows.length === 0){
+        found = false;
+    } else{
+        found = true;
+    }
+
+    console.log(found);
+
+   return response.send(found);
+
 })
 
 app.get(`/visiotime/updateAccount`, async(request, response) =>{
@@ -45,22 +89,86 @@ app.get(`/visiotime/updateAccount`, async(request, response) =>{
     let user_name = request.query.user_name;
 	let account_type = request.query.account_type;
 
-    
+    let found = false;
 
-    const res = await accounts.update_Account(id, name, surname, email, phone, password, user_name, account_type);
+    //console.log(email);
 
-    return response.send(res);
+    const pool = new Pool(conf);
+
+    const client = await pool.connect();
+    let res;
+    try {
+        res = await client.query(`update accounts set id = ${id}, name = '${name}', surname = '${surname}', email = '${email}', phone = '${phone}', password = '${password}', user_name = '${user_name}', account_type = ${account_type}  where id = ${id}`);
+        client.release()
+    } catch (error) {
+        console.log(error);
+    }
+console.log(res);
+return response.send(res);
 })
 
 app.get(`/visiotime/getAccount`, async(request, response) =>{
-    const email = await request.query.email;
 
-    const res = await accounts.get_Account(email);
+    let email = await request.query.email;
 
-    return response.send(res);
+    console.log(email);
+
+    const pool = new Pool(conf);
+
+    const client = await pool.connect();
+    let res;
+    try {
+        res = await client.query(`SELECT * FROM accounts where email = '${email}'`);
+        client.release()
+    } catch (error) {
+        console.log(error);
+    }
+
+    
+    res.rows.forEach(element => {
+        console.log(element);
+        return response.send(JSON.stringify(element));
+});
+
+   
 
 })
 
+app.get(`/visiotime/getAccounts`, async(request, response) =>{
+    const pool = new Pool(conf);
 
+    const client = await pool.connect();
+    let res;
+    try {
+        res = await client.query(`SELECT * FROM accounts`);
+        client.release()
+    } catch (error) {
+        console.log(error);
+    }
+
+        return response.send(JSON.stringify(res.rows));
+
+})
+
+async function validate(email){
+    const pool = new Pool(conf);
+
+    const client = await pool.connect();
+    let res;
+    try {
+        res = await client.query(`SELECT * FROM accounts where email = '${email}'`);
+        client.release()
+    } catch (error) {
+        console.log(error);
+    }
+
+    if(res.rows.length === 0){
+        found = false;
+    } else{
+        found = true;
+    }
+
+    return found;
+}
 
 app.listen(port, () => console.log(`VisioTime API listening on port ${port}!`))
