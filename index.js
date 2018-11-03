@@ -14,15 +14,17 @@ connectionTimeoutMillis: 2000,
 
 let port = 8080;
 
+// ACCOUNTS //
+
 app.get(`/visiotime/createAccount`, async(request, response) =>{
 
-    let name = await request.query.name;
-    let surname = await request.query.surname;
-    let user_name = await request.query.user_name;
-    let password = await request.query.password;
-    let phone = await request.query.phone;
-    let email = await request.query.email;
-    let account_type = await request.query.account_type;
+    let name = request.query.name;
+    let surname = request.query.surname;
+    let user_name = request.query.user_name;
+    let password = request.query.password;
+    let phone = request.query.phone;
+    let email = request.query.email;
+    let account_type = request.query.account_type;
 
     console.log(email);
 
@@ -137,16 +139,42 @@ app.get(`/visiotime/getAccount`, async(request, response) =>{
 app.get(`/visiotime/getAccounts`, async(request, response) =>{
     const pool = new Pool(conf);
 
+    
+
     const client = await pool.connect();
     let res;
     try {
-        res = await client.query(`SELECT * FROM accounts`);
+        res = await client.query(`SELECT * FROM accounts order by id desc`);
         client.release()
     } catch (error) {
         console.log(error);
     }
 
         return response.send(JSON.stringify(res.rows));
+
+})
+
+app.get(`/visiotime/deleteAccount`, async(request, response) =>{
+    const pool = new Pool(conf);
+
+    let email = await request.query.email;
+
+    const client = await pool.connect();
+    let res;
+    try {
+        await client.query(`delete from accounts where email='${email}'`);
+        client.release()
+    } catch (error) {
+        console.log(error);
+    }
+
+    let found = await validate(email);
+
+    if(found){
+        return response.send("User created");
+    }else{
+        return response.send("ERROR!!! User not created");
+    }
 
 })
 
@@ -170,5 +198,24 @@ async function validate(email){
 
     return found;
 }
+
+// COMPANIES //
+
+app.get(`/visiotime/getCompanies`, async(request, response) =>{
+    const pool = new Pool(conf);
+
+    let company_id = request.query.company_id;
+
+    const client = await pool.connect();
+    let res;
+    try {
+        res = await client.query(`select * from companies where company_id = ${company_id}`);
+        client.release()
+    } catch (error) {
+        console.log(error);
+    }
+return response.send(JSON.stringify(res.rows));
+
+})
 
 app.listen(port, () => console.log(`VisioTime API listening on port ${port}!`))
