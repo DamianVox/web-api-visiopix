@@ -48,14 +48,17 @@ if(found){
 }
 })
 
-app.get(`/visiotime/validateAccount`, async(request, response) =>{
+app.get(`/visiotime/validateAccount/:email/:password`, async(request, response) =>{
 
-    let email = request.query.email;
-	let passwd = request.query.password;
+    console.log(request);
+
+    let email = request.params.email;
+	let passwd = request.params.password;
 
     let found = false;
 
     console.log(email);
+    console.log(passwd);
 
     const pool = new Pool(conf);
 
@@ -76,7 +79,7 @@ app.get(`/visiotime/validateAccount`, async(request, response) =>{
 
     console.log(found);
 
-   return response.send(found);
+   return response.send(res.rows);
 
 })
 
